@@ -3,6 +3,8 @@ from django.db.models import Q
 from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.response import Response
 from datetime import datetime
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+
 
 from rest_framework import generics, status, permissions
 from .models import Category, Auction, Bid
@@ -81,6 +83,7 @@ class CategoryRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 class AuctionListCreate(generics.ListCreateAPIView): 
     queryset = Auction.objects.all() 
     serializer_class = AuctionListCreateSerializer 
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
         queryset = Auction.objects.all()
@@ -148,6 +151,9 @@ class AuctionListCreate(generics.ListCreateAPIView):
             queryset = queryset.filter(price__lte=high_price)
 
         return queryset
+    
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 class AuctionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView): 
     queryset = Auction.objects.all() 

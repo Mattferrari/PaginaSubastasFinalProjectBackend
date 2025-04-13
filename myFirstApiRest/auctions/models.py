@@ -27,7 +27,6 @@ class Auction(models.Model):
     thumbnail = models.URLField() 
     creation_date = models.DateTimeField(auto_now_add=True)      
     closing_date = models.DateTimeField()
-    # NUEVO: campo para asociar la subasta al usuario que la crea.
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
