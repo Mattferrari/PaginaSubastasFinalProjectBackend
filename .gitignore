@@ -7,3 +7,4 @@ djangoServer/
 *.pyc
 __pycache__/
 /myFirstApiRest/users/migrations/__pycache__
+/myFirstApiRest/auctions/__pycache__
