@@ -24,7 +24,9 @@ from .views import (
     AuctionListCreate,
     AuctionRetrieveUpdateDestroy,
     BidListCreate,
-    BidRetrieveUpdateDestroy
+    BidRetrieveUpdateDestroy,
+    AuctionByUserList,
+    BidByUserList  # Importamos el nuevo endpoint para las pujas
 )
 
 app_name = "auctions"
@@ -37,8 +39,12 @@ urlpatterns = [
     # Subastas
     path('subastas/', AuctionListCreate.as_view(), name='auction-list-create'),
     path('subastas/<int:pk>/', AuctionRetrieveUpdateDestroy.as_view(), name='auction-detail'),
+    # Nuevo endpoint: Subastas creadas por el usuario autenticado
+    path('subastas/mis-subastas/', AuctionByUserList.as_view(), name='auction-by-user'),
 
-    # Pujas
+    path('subastas/mis-pujas/', BidByUserList.as_view(), name='bid-by-user'),
+
+    # Pujas (para una subasta específica)
     path('subastas/<int:id_subasta>/pujas/', BidListCreate.as_view(), name='bid-list-create'),
     path('subastas/<int:id_subasta>/pujas/<int:idPuja>/', BidRetrieveUpdateDestroy.as_view(), name='bid-detail'),
 ]

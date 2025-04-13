@@ -1,14 +1,13 @@
+# auctions/models.py
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
 
-
-# Create your models here.
 class Category(models.Model): 
     name = models.CharField(max_length=50, blank=False, unique=True) 
  
     class Meta:  
-        ordering=('id',)  
+        ordering = ('id',)  
  
     def __str__(self): 
         return self.name 
@@ -16,22 +15,27 @@ class Category(models.Model):
 class Auction(models.Model): 
     title = models.CharField(max_length=150) 
     description = models.TextField() 
-    price = models.DecimalField(max_digits=10, 
-                                decimal_places=2) 
-    rating = models.DecimalField(max_digits=3, 
-                                 decimal_places=2, 
-                                 validators=[MaxValueValidator(5), MinValueValidator(1)]) 
+    price = models.DecimalField(max_digits=10, decimal_places=2) 
+    rating = models.DecimalField(
+        max_digits=3, 
+        decimal_places=2, 
+        validators=[MaxValueValidator(5), MinValueValidator(1)]
+    ) 
     stock = models.IntegerField(validators=[MinValueValidator(1)]) 
     brand = models.CharField(max_length=100) 
-    category = models.ForeignKey(Category, 
-                                related_name='auctions', 
-                                on_delete=models.CASCADE) 
+    category = models.ForeignKey(Category, related_name='auctions', on_delete=models.CASCADE) 
     thumbnail = models.URLField() 
     creation_date = models.DateTimeField(auto_now_add=True)      
-    closing_date = models.DateTimeField() 
+    closing_date = models.DateTimeField()
+    # NUEVO: campo para asociar la subasta al usuario que la crea.
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='auctions'
+    )
  
     class Meta:  
-        ordering=('id',)  
+        ordering = ('id',)  
  
     def __str__(self): 
         return self.title
@@ -39,7 +43,10 @@ class Auction(models.Model):
 class Bid(models.Model):
     auction = models.ForeignKey(Auction, related_name='bids', on_delete=models.CASCADE)
     bidder = models.CharField(max_length=150)
-    price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0.01)])
+    price = models.DecimalField(
+        max_digits=10, decimal_places=2,
+        validators=[MinValueValidator(0.01)]
+    )
     bid_time = models.DateTimeField(auto_now_add=True)
 
     class Meta:

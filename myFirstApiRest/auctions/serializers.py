@@ -34,7 +34,7 @@ class BidSerializer(serializers.ModelSerializer):
 class CategoryListCreateSerializer(serializers.ModelSerializer): 
     class Meta: 
         model = Category 
-        fields = ['id','name'] 
+        fields = ['id', 'name'] 
 
 class CategoryDetailSerializer(serializers.ModelSerializer): 
     class Meta: 
@@ -48,12 +48,12 @@ class AuctionListCreateSerializer(serializers.ModelSerializer):
 
     class Meta: 
         model = Auction 
-        fields = '__all__' 
+        fields = '__all__'
+        read_only_fields = ('id', 'user', 'creation_date')  # <-- user marcado como read-only
 
     def validate_closing_date(self, value): 
         if value <= timezone.now(): 
             raise serializers.ValidationError("Closing date must be greater than now.") 
-        
         elif (value - timezone.now()).days < 15:
             raise serializers.ValidationError("Closing date must be 15 or more days after now.") 
         return value
@@ -63,14 +63,14 @@ class AuctionListCreateSerializer(serializers.ModelSerializer):
         return obj.closing_date > timezone.now()
     
 class AuctionDetailSerializer(serializers.ModelSerializer): 
-
     creation_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ", read_only=True) 
     closing_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ")
     isOpen = serializers.SerializerMethodField(read_only=True) 
 
     class Meta: 
         model = Auction 
-        fields = '__all__' 
+        fields = '__all__'
+        read_only_fields = ('id', 'user', 'creation_date')
 
     @extend_schema_field(serializers.BooleanField())
     def get_isOpen(self, obj): 
@@ -82,5 +82,3 @@ class AuctionDetailSerializer(serializers.ModelSerializer):
         elif (value - timezone.now()).days < 15:
             raise serializers.ValidationError("Closing date must be 15 or more days after now.") 
         return value
-
-

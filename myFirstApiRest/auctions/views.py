@@ -4,13 +4,15 @@ from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.response import Response
 from datetime import datetime
 
-
-
-# Create your views here.
-from rest_framework import generics, status
+from rest_framework import generics, status, permissions
 from .models import Category, Auction, Bid
-from .serializers import CategoryListCreateSerializer, CategoryDetailSerializer, AuctionListCreateSerializer, AuctionDetailSerializer, BidSerializer
-
+from .serializers import (
+    CategoryListCreateSerializer, 
+    CategoryDetailSerializer, 
+    AuctionListCreateSerializer, 
+    AuctionDetailSerializer, 
+    BidSerializer
+)
 
 
 class BidListCreate(generics.ListCreateAPIView):
@@ -107,7 +109,7 @@ class AuctionListCreate(generics.ListCreateAPIView):
                 code=status.HTTP_400_BAD_REQUEST
             )
         if category:
-            queryset = queryset.filter(category__id=category)  # Corrección del filtro
+            queryset = queryset.filter(category__id=category)
 
         # Validación de precios
         if low_price:
@@ -148,7 +150,27 @@ class AuctionListCreate(generics.ListCreateAPIView):
         return queryset
 
 class AuctionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView): 
-    
     queryset = Auction.objects.all() 
     serializer_class = AuctionDetailSerializer
+
+
+class AuctionByUserList(generics.ListAPIView):
+    serializer_class = AuctionListCreateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Auction.objects.filter(user=self.request.user)
+    
+
+class BidByUserList(generics.ListAPIView):
+    """
+    Endpoint para listar las pujas realizadas por el usuario autenticado.
+    Se requiere enviar el token JWT en la cabecera (Authorization: Bearer <token>).
+    """
+    serializer_class = BidSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Filtra las pujas cuyo campo 'bidder' (string) concuerda con el username del usuario autenticado.
+        return Bid.objects.filter(bidder=self.request.user.username)
 

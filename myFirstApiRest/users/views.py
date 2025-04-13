@@ -1,7 +1,7 @@
 from django.shortcuts import render
 
 # Create your views here.
-from rest_framework import status, generics 
+from rest_framework import status, generics, permissions
 from rest_framework.response import Response 
 from rest_framework_simplejwt.tokens import RefreshToken 
 from rest_framework.views import APIView 
@@ -54,3 +54,13 @@ status=status.HTTP_205_RESET_CONTENT)
  
         except Exception as e: 
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+class UserMeView(generics.RetrieveAPIView):
+    """
+    Endpoint para obtener los datos del usuario autenticado.
+    """
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
