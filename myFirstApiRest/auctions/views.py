@@ -69,17 +69,14 @@ class BidRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         return Bid.objects.filter(auction=auction)
 
 class CategoryListCreate(generics.ListCreateAPIView): 
-
     queryset = Category.objects.all() 
     serializer_class = CategoryListCreateSerializer 
 
 class CategoryRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView): 
-
     queryset = Category.objects.all() 
     serializer_class = CategoryDetailSerializer 
 
 class AuctionListCreate(generics.ListCreateAPIView): 
-
     queryset = Auction.objects.all() 
     serializer_class = AuctionListCreateSerializer 
 
