@@ -1,5 +1,6 @@
 from django.urls import path 
 from .views import UserRegisterView, UserListView, UserRetrieveUpdateDestroyView, LogoutView, UserMeView
+
  
 app_name="users" 
 urlpatterns = [ 
@@ -9,3 +10,4 @@ urlpatterns = [
     path('<int:pk>/', UserRetrieveUpdateDestroyView.as_view(), name='user-detail'), 
     path('log-out/', LogoutView.as_view(), name='log-out'), 
 ]
+

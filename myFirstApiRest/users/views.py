@@ -1,10 +1,17 @@
 from django.shortcuts import render
+from rest_framework.generics import RetrieveUpdateAPIView
+
 
 # Create your views here.
 from rest_framework import status, generics, permissions
 from rest_framework.response import Response 
 from rest_framework_simplejwt.tokens import RefreshToken 
 from rest_framework.views import APIView 
+
+    
+
+from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth import authenticate
 
 from .models import CustomUser 
 from .serializers import UserSerializer
@@ -55,12 +62,19 @@ status=status.HTTP_205_RESET_CONTENT)
         except Exception as e: 
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
-class UserMeView(generics.RetrieveAPIView):
+class UserMeView(generics.RetrieveUpdateAPIView):
     """
     Endpoint para obtener los datos del usuario autenticado.
     """
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return self.request.user
+    def update(self, request, *args, **kwargs):
+        user = self.get_object()
+        if "password" in request.data:
+            user.set_password(request.data["password"])
+            user.save()
+            return Response({"detail": "Contraseña actualizada correctamente."})
+        return super().update(request, *args, **kwargs)
