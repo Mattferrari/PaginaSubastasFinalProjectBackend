@@ -6,3 +6,4 @@ djangoServer/
 *.log
 *.pyc
 __pycache__/
+/myFirstApiRest/users/migrations/__pycache__
