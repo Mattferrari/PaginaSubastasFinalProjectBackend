@@ -13,7 +13,7 @@ class UserSerializer(serializers.ModelSerializer):
         } 
 
     def validate_email(self, value):
-        user = self.instance  # Solo tiene valor cuando se está actualizando 
+        user = self.instance  
         if CustomUser.objects.filter(email=value).exclude(pk=user.pk if user else None).exists():
             raise serializers.ValidationError("Email already in use.")
         return value
@@ -22,7 +22,7 @@ class UserSerializer(serializers.ModelSerializer):
         password = validated_data.pop("password")
         user = CustomUser(**validated_data)
         print("Password recibida antes del set_password:", password)
-        user.set_password(password)  # Este paso es crucial para encriptar la contraseña
-        print("Password después del set_password:", user.password)  # Debería verse algo como "pbkdf2_sha256$..."
+        user.set_password(password)  
+        print("Password después del set_password:", user.password) 
         user.save()
         return user
