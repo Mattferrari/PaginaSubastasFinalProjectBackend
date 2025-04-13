@@ -19,6 +19,7 @@ from .serializers import (
 
 class BidListCreate(generics.ListCreateAPIView):
     serializer_class = BidSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, id_subasta):
         # Obtener la subasta
@@ -50,6 +51,7 @@ class BidListCreate(generics.ListCreateAPIView):
         return Bid.objects.filter(auction=auction)
 
     def perform_create(self, serializer):
+        
         auction = self.get_auction()
         serializer.save(auction=auction, bidder=self.request.user)
 
@@ -57,6 +59,20 @@ class BidListCreate(generics.ListCreateAPIView):
         context = super().get_serializer_context()
         context['auction'] = self.get_auction()
         return context
+
+
+class BidByUserList(generics.ListAPIView):
+    """
+    Endpoint para listar las pujas realizadas por el usuario autenticado.
+    Se requiere enviar el token JWT en la cabecera (Authorization: Bearer <token>).
+    """
+    serializer_class = BidSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Filtra las pujas cuyo campo 'bidder' (string) concuerda con el username del usuario autenticado.
+        return Bid.objects.filter(bidder=self.request.user.username)
+    
 
 class BidRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = BidSerializer
@@ -167,16 +183,3 @@ class AuctionByUserList(generics.ListAPIView):
     def get_queryset(self):
         return Auction.objects.filter(user=self.request.user)
     
-
-class BidByUserList(generics.ListAPIView):
-    """
-    Endpoint para listar las pujas realizadas por el usuario autenticado.
-    Se requiere enviar el token JWT en la cabecera (Authorization: Bearer <token>).
-    """
-    serializer_class = BidSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        # Filtra las pujas cuyo campo 'bidder' (string) concuerda con el username del usuario autenticado.
-        return Bid.objects.filter(bidder=self.request.user.username)
-

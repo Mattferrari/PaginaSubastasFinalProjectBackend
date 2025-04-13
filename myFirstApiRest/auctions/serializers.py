@@ -9,7 +9,7 @@ class BidSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Bid
-        fields = ['id', 'auction', 'bidder', 'bidder_username', 'amount', 'bid_time']
+        fields = ['id', 'auction', 'bidder', 'bidder_username', 'price', 'bid_time']
         read_only_fields = ['id', 'bid_time', 'bidder_username']
 
     def validate_price(self, value):
@@ -17,10 +17,10 @@ class BidSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("El precio de la puja debe ser un número positivo.")
         return value
 
-    def validate_amount(self, value):
+    def validate_price(self, value):
         auction = self.context['auction']
-        highest_bid = auction.bids.order_by('-amount').first()
-        if highest_bid and value <= highest_bid.amount:
+        highest_bid = auction.bids.order_by('-price').first()
+        if highest_bid and value <= highest_bid.price:
             raise serializers.ValidationError("The bid must be higher than the current highest bid.")
         if value <= auction.price:
             raise serializers.ValidationError("The bid must be higher than the starting price.")
