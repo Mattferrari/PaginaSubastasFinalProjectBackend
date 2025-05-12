@@ -57,25 +57,6 @@ class BidListCreate(generics.ListCreateAPIView):
     serializer_class = BidSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request, id_subasta):
-        # Obtener la subasta
-        try:
-            auction = Auction.objects.get(id=id_subasta)
-        except Auction.DoesNotExist:
-            return Response({"detail": "Subasta no encontrada."}, status=status.HTTP_404_NOT_FOUND)
-        
-        # Comprobar si la subasta está abierta
-        if auction.closing_date < datetime.now():
-            return Response({"detail": "La subasta ya ha cerrado."}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Crear la nueva puja
-        serializer = BidSerializer(data=request.data)
-        if serializer.is_valid():
-            # Establecer los datos relacionados con la subasta y el usuario
-            serializer.save(auction=auction, bidder=request.user, bid_time=datetime.now())
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
     def get_auction(self):
         try:
             return Auction.objects.get(pk=self.kwargs['id_subasta'])
@@ -87,9 +68,12 @@ class BidListCreate(generics.ListCreateAPIView):
         return Bid.objects.filter(auction=auction)
 
     def perform_create(self, serializer):
-        
         auction = self.get_auction()
-        serializer.save(auction=auction, bidder=self.request.user)
+        
+        if auction.closing_date < timezone.now():
+            raise ValidationError({"detail": "La subasta ya ha cerrado."})
+        
+        serializer.save(auction=auction, bidder=self.request.user.username)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
