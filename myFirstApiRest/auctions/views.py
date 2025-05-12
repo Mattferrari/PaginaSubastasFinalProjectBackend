@@ -3,42 +3,59 @@ from django.db.models import Q
 from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.response import Response
 from datetime import datetime
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.views import APIView
+from django.utils import timezone 
+
+
 
 
 from rest_framework import generics, status, permissions
-from .models import Category, Auction, Bid
+from .models import Category, Auction, Bid, Rating, Comentario
 from .serializers import (
     CategoryListCreateSerializer, 
     CategoryDetailSerializer, 
     AuctionListCreateSerializer, 
     AuctionDetailSerializer, 
-    BidSerializer
+    BidSerializer,
+    RatingSerializer,
+    ComentarioSerializer
 )
+
+class ComentarioListCreateView(generics.ListCreateAPIView):
+    serializer_class = ComentarioSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        return Comentario.objects.filter(
+            subasta_id=self.kwargs['subasta_id']
+        ).order_by('-creado_en')
+
+    def perform_create(self, serializer):
+        serializer.save(
+            autor=self.request.user,
+            subasta_id=self.kwargs['subasta_id']
+        )
+
+class ComentarioRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = ComentarioSerializer
+    queryset = Comentario.objects.all()
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def perform_update(self, serializer):
+        if self.request.user != self.get_object().autor:
+            raise PermissionDenied("Solo puedes editar tus propios comentarios.")
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        if self.request.user != instance.autor:
+            raise PermissionDenied("Solo puedes eliminar tus propios comentarios.")
+        instance.delete()
 
 
 class BidListCreate(generics.ListCreateAPIView):
     serializer_class = BidSerializer
     permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request, id_subasta):
-        # Obtener la subasta
-        try:
-            auction = Auction.objects.get(id=id_subasta)
-        except Auction.DoesNotExist:
-            return Response({"detail": "Subasta no encontrada."}, status=status.HTTP_404_NOT_FOUND)
-        
-        # Comprobar si la subasta está abierta
-        if auction.closing_date < datetime.now():
-            return Response({"detail": "La subasta ya ha cerrado."}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Crear la nueva puja
-        serializer = BidSerializer(data=request.data)
-        if serializer.is_valid():
-            # Establecer los datos relacionados con la subasta y el usuario
-            serializer.save(auction=auction, bidder=request.user, bid_time=datetime.now())
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get_auction(self):
         try:
@@ -51,9 +68,12 @@ class BidListCreate(generics.ListCreateAPIView):
         return Bid.objects.filter(auction=auction)
 
     def perform_create(self, serializer):
-        
         auction = self.get_auction()
-        serializer.save(auction=auction, bidder=self.request.user)
+        
+        if auction.closing_date < timezone.now():
+            raise ValidationError({"detail": "La subasta ya ha cerrado."})
+        
+        serializer.save(auction=auction, bidder=self.request.user.username)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -174,6 +194,13 @@ class AuctionListCreate(generics.ListCreateAPIView):
 class AuctionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView): 
     queryset = Auction.objects.all() 
     serializer_class = AuctionDetailSerializer
+    permission_classes = [IsAuthenticated]
+
+
+    def perform_destroy(self, instance):
+        if self.request.user != instance.user and not self.request.user.is_staff:
+            raise PermissionDenied("No tienes permiso para eliminar esta subasta.")
+        instance.delete()
 
 
 class AuctionByUserList(generics.ListAPIView):
@@ -183,3 +210,38 @@ class AuctionByUserList(generics.ListAPIView):
     def get_queryset(self):
         return Auction.objects.filter(user=self.request.user)
     
+
+class PublicRatingsListView(generics.ListAPIView):
+    queryset = Rating.objects.all()
+    serializer_class = RatingSerializer
+    permission_classes = [permissions.AllowAny]
+    
+class RateAuctionView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            auction = Auction.objects.get(pk=pk)
+        except Auction.DoesNotExist:
+            return Response({'error': 'Auction not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        data = request.data.copy()
+        data['auction'] = auction.id  # asignar el id manualmente
+        serializer = RatingSerializer(data=data, context={'request': request})
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Rating saved'}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    
+class DeleteRatingView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, auction_id):
+        try:
+            rating = Rating.objects.get(user=request.user, auction_id=auction_id)
+            rating.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Rating.DoesNotExist:
+            return Response({'detail': 'Valoración no encontrada.'}, status=status.HTTP_404_NOT_FOUND)
