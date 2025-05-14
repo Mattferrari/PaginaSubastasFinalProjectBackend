@@ -245,3 +245,14 @@ class DeleteRatingView(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Rating.DoesNotExist:
             return Response({'detail': 'Valoración no encontrada.'}, status=status.HTTP_404_NOT_FOUND)
+
+class UserRatingView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, auction_id):
+        user = request.user  
+        rating = Rating.objects.filter(user=user, auction_id=auction_id).first()
+
+        if rating:
+            return Response({"value": rating.value}, status=200)
+        return Response({"value": None}, status=404)
