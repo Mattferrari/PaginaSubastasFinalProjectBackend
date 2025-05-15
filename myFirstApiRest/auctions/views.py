@@ -134,8 +134,8 @@ class AuctionListCreate(generics.ListCreateAPIView):
         category = params.get('category', None)
         low_price = params.get('low_price', None)
         high_price = params.get('high_price', None)
-        # low_rating = params.get('low_rating', None)
-        # is_open = params.get('is_open', None)
+        low_rating = params.get('low_rating', None)
+        is_open = params.get('is_open', None)
 
 
         # Validación de búsqueda
@@ -194,20 +194,20 @@ class AuctionListCreate(generics.ListCreateAPIView):
         if high_price:
             queryset = queryset.filter(price__lte=high_price)
         
-        # if low_rating:
-        #     try:
-        #         low_rating = float(low_rating)
-        #     except ValueError:
-        #         raise ValidationError(
-        #             {"low_rating": "Invalid value. Must be a number"},
-        #             code=status.HTTP_400_BAD_REQUEST
-        #         )
+        if low_rating:
+            try:
+                low_rating = float(low_rating)
+            except ValueError:
+                raise ValidationError(
+                    {"low_rating": "Invalid value. Must be a number"},
+                    code=status.HTTP_400_BAD_REQUEST
+                )
     
-        # if low_rating:
-        #     queryset = queryset.filter(rating__gte=max(0,min(5,low_rating)))
+        if low_rating:
+            queryset = queryset.filter(rating__gte=max(0,min(5,low_rating)))
 
-        # if is_open:
-        #     queryset = queryset.filter(closing_date__gt=timezone.now())
+        if is_open:
+            queryset = queryset.filter(closing_date__gt=timezone.now())
 
         return queryset
     

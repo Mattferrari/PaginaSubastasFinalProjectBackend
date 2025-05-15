@@ -51,7 +51,7 @@ class AuctionListCreateSerializer(serializers.ModelSerializer):
     creation_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ", read_only=True) 
     closing_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") 
     isOpen = serializers.SerializerMethodField(read_only=True)
-
+    average_rating = serializers.SerializerMethodField(read_only=True) 
     class Meta: 
         model = Auction 
         fields = '__all__'
@@ -68,6 +68,12 @@ class AuctionListCreateSerializer(serializers.ModelSerializer):
     def get_isOpen(self, obj): 
         return obj.closing_date > timezone.now()
     
+    @extend_schema_field(serializers.FloatField())
+    def get_average_rating(self, obj):
+        avg = obj.ratings.aggregate(Avg('value'))['value__avg']
+        return avg if avg is not None else 1.0
+    
+
 class AuctionUnautenticatedDetailSerializer(serializers.ModelSerializer):
     creation_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ", read_only=True)
     closing_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ", read_only=True)
@@ -77,9 +83,7 @@ class AuctionUnautenticatedDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Auction
         fields = "__all__"
-        read_only_fields = [
-            "title", "description", "price", "stock", "brand", "category", "thumbnail", "creation_date", "closing_date"
-        ]
+        read_only_fields = tuple(fields)
 
     @extend_schema_field(serializers.BooleanField())
     def get_isOpen(self, obj): 
@@ -87,7 +91,7 @@ class AuctionUnautenticatedDetailSerializer(serializers.ModelSerializer):
     
     @extend_schema_field(serializers.FloatField())
     def get_average_rating(self, obj):
-        avg = obj.ratings.aggregate(Avg('value'))['value__avg']
+        avg = obj.ratings.aggregate(Avg('value')).get('value__avg', None)
         return avg if avg is not None else 1.0
     
 class AuctionDetailSerializer(serializers.ModelSerializer): 
