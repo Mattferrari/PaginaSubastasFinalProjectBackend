@@ -15,7 +15,8 @@ from .views import (
     ComentarioRetrieveUpdateDestroyView,
     UserRatingView,
     MyComments,
-    MyRatingsView
+    MyRatingsView,
+    AuctionDetailView
 )
 
 app_name = "auctions"
@@ -32,7 +33,9 @@ urlpatterns = [
     # returns a list of all auctions allowing to create new ones
     path('subastas/', AuctionListCreate.as_view(), name='auction-list-create'),
     # modifies or deletes a given auction
-    path('subastas/<int:pk>/', AuctionRetrieveUpdateDestroy.as_view(), name='auction-detail'),
+    path('subastas/<int:pk>/modify/delete', AuctionRetrieveUpdateDestroy.as_view(), name='auction-view'),
+    # view auction detail
+    path('subastas/<int:pk>/', AuctionDetailView.as_view(), name="auction-view-unloged"),
     # returns a list of all auctions filtered by user
     path('subastas/mis-subastas/', AuctionByUserList.as_view(), name='auction-by-user'),
 
