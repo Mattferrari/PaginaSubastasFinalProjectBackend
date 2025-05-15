@@ -7,13 +7,14 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken 
 from rest_framework.views import APIView 
 
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from django.contrib.auth import authenticate
 
 from .models import CustomUser 
 from .serializers import UserSerializer
  
 class UserRegisterView(generics.CreateAPIView): 
+    permission_classes = [AllowAny]
     queryset = CustomUser.objects.all() 
     serializer_class = UserSerializer 
  
@@ -31,15 +32,17 @@ class UserRegisterView(generics.CreateAPIView):
 status=status.HTTP_400_BAD_REQUEST) 
  
 class UserListView(generics.ListAPIView): 
+    permission_classes = [IsAdminUser]
     serializer_class = UserSerializer 
     queryset = CustomUser.objects.all() 
  
 class UserRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView): 
+    permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer 
     queryset = CustomUser.objects.all()
 
 class LogoutView(APIView): 
- 
+    permission_classes = [IsAuthenticated]
     def post(self, request): 
         """Realiza el logout eliminando el RefreshToken (revocar)""" 
         try: 

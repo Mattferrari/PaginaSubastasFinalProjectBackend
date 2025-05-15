@@ -13,7 +13,9 @@ from .views import (
     PublicRatingsListView,
     ComentarioListCreateView,
     ComentarioRetrieveUpdateDestroyView,
-    UserRatingView
+    UserRatingView,
+    MyComments,
+    MyRatingsView
 )
 
 app_name = "auctions"
@@ -50,14 +52,17 @@ urlpatterns = [
     path('subastas/<int:auction_id>/user/rate/', UserRatingView.as_view(), name='rate-user-auction'),
     # allows to create or modify a rating for a given product
     path('subastas/<int:pk>/rate/', RateAuctionView.as_view(), name='rate-auction'),
-    # deletes a given auction
+    # deletes a given rating
     path('subastas/<int:auction_id>/rate/delete/', DeleteRatingView.as_view(), name='delete_rating'),
-    
+    # returns a list of user's ratings
+    path('subastas/rate/user/', MyRatingsView.as_view(), name='mis-ratings'),
 
     # Comentarios
     # returns a list  of all comments allowing to create new ones
     path('subastas/<int:subasta_id>/comentarios/', ComentarioListCreateView.as_view(), name='comentarios-list-create'),
     # modifies or deletes a given comment
     path('subastas/<int:subasta_id>/comentarios/<int:pk>/', ComentarioRetrieveUpdateDestroyView.as_view(), name='comentario-detail'),
+    # returns al list of user's comments
+    path('subastas/comentarios/user/', MyComments.as_view(), name='mis-comentarios'),
 
 ]

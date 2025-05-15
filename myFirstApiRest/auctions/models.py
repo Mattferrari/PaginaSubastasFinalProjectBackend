@@ -86,8 +86,16 @@ class Comentario(models.Model):
     cuerpo = models.TextField()
     creado_en = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)
-    autor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='comentarios')
-    subasta = models.ForeignKey(Auction, on_delete=models.CASCADE, related_name='comentarios')
+    autor = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE, 
+        related_name='comentarios'
+    )
+    subasta = models.ForeignKey(
+        Auction, 
+        on_delete=models.CASCADE, 
+        related_name='comentarios'
+    )
 
     def __str__(self):
         return f"{self.titulo} - {self.autor.username}"

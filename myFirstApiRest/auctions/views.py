@@ -9,7 +9,7 @@ from django.utils import timezone
 
 
 
-
+from .permissions import IsOwnerOrAdmin, IsAuthorOrAdmin
 from rest_framework import generics, status, permissions
 from .models import Category, Auction, Bid, Rating, Comentario
 from .serializers import (
@@ -40,18 +40,22 @@ class ComentarioListCreateView(generics.ListCreateAPIView):
 class ComentarioRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ComentarioSerializer
     queryset = Comentario.objects.all()
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthorOrAdmin]
 
     def perform_update(self, serializer):
-        if self.request.user != self.get_object().autor:
-            raise PermissionDenied("Solo puedes editar tus propios comentarios.")
         serializer.save()
 
     def perform_destroy(self, instance):
-        if self.request.user != instance.autor:
-            raise PermissionDenied("Solo puedes eliminar tus propios comentarios.")
         instance.delete()
 
+class MyComments(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        comentarios = Comentario.objects.filter(autor=user)
+        serializer = ComentarioSerializer(comentarios, many=True)
+        return Response({"value":serializer.data}, status=200)
 
 class BidListCreate(generics.ListCreateAPIView):
     serializer_class = BidSerializer
@@ -80,7 +84,6 @@ class BidListCreate(generics.ListCreateAPIView):
         context['auction'] = self.get_auction()
         return context
 
-
 class BidByUserList(generics.ListAPIView):
     """
     Endpoint para listar las pujas realizadas por el usuario autenticado.
@@ -93,7 +96,6 @@ class BidByUserList(generics.ListAPIView):
         # Filtra las pujas cuyo campo 'bidder' (string) concuerda con el username del usuario autenticado.
         return Bid.objects.filter(bidder=self.request.user.username)
     
-
 class BidRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = BidSerializer
     lookup_url_kwarg = 'idPuja'
@@ -108,6 +110,7 @@ class BidRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         auction = self.get_auction()
         return Bid.objects.filter(auction=auction)
 
+
 class CategoryListCreate(generics.ListCreateAPIView): 
     queryset = Category.objects.all() 
     serializer_class = CategoryListCreateSerializer 
@@ -115,6 +118,7 @@ class CategoryListCreate(generics.ListCreateAPIView):
 class CategoryRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView): 
     queryset = Category.objects.all() 
     serializer_class = CategoryDetailSerializer 
+
 
 class AuctionListCreate(generics.ListCreateAPIView): 
     queryset = Auction.objects.all() 
@@ -194,14 +198,11 @@ class AuctionListCreate(generics.ListCreateAPIView):
 class AuctionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView): 
     queryset = Auction.objects.all() 
     serializer_class = AuctionDetailSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsOwnerOrAdmin]
 
 
     def perform_destroy(self, instance):
-        if self.request.user != instance.user and not self.request.user.is_staff:
-            raise PermissionDenied("No tienes permiso para eliminar esta subasta.")
         instance.delete()
-
 
 class AuctionByUserList(generics.ListAPIView):
     serializer_class = AuctionListCreateSerializer
@@ -233,8 +234,7 @@ class RateAuctionView(APIView):
             serializer.save()
             return Response({'message': 'Rating saved'}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    
+   
 class DeleteRatingView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -256,3 +256,12 @@ class UserRatingView(APIView):
         if rating:
             return Response({"value": rating.value}, status=200)
         return Response({"value": None}, status=404)
+    
+class MyRatingsView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        ratings =  Rating.objects.filter(user=user)
+        serializer = RatingSerializer(ratings, many=True)
+        return Response({"value": serializer.data}, status=200)
